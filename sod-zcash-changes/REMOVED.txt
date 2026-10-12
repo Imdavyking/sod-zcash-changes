@@ -1,0 +1,19 @@
+Delete these from your existing projects (no longer used):
+
+Backend project root ("first"):
+  contracts/            (Solidity replaced by src/core/policy.ts)
+  scripts/deploy.ts
+  hardhat.config.ts, tsconfig.json (replaced), cache/, typechain-types/, deployments/
+  test/SodCrowdfund.test.ts, test/SodConfidentialCrowdfund.test.ts
+  package-lock.json  (regenerate with npm install)
+  .env               (Arbitrum PRIVATE_KEY and RPC; see note in chat)
+
+Frontend project:
+  src/PrivatePanel.tsx
+  src/lib/cofhe.ts, src/lib/wagmi.ts, src/lib/wallet.ts, src/lib/contracts.ts
+  src/contracts/deployment.json
+  .npmrc, package-lock.json  (regenerate with npm install)
+  .env  -> now only VITE_SOD_API (optional); the ZeroDev id and contract addresses are unused
+
+Unchanged and not included: frontend/{tailwind.config.js, postcss.config.js, tsconfig.json, index.css},
+frontend/src/{art.tsx, Site.tsx}. Put the frontend files into a folder named frontend/ inside the backend project.
