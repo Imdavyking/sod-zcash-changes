@@ -7,13 +7,14 @@ import type { CampaignRecord, ChainView, RefundRequest, RejectReason, WithdrawRe
 import type { SignerNode } from "../signer/signerNode.js";
 import type { ThresholdSpender } from "../threshold/spender.js";
 
-/** Derives the escrow's diversified receiving address for a campaign. Backed by the group's viewing key. */
+/** Gives each campaign its own escrow receiving address (a diversified address of the escrow key). */
 export interface EscrowAddresses {
-  addressFor(diversifierIndexHex: string): string;
+  addressFor(campaignId: string): string | Promise<string>;
 }
 
 export class MockEscrowAddresses implements EscrowAddresses {
-  addressFor(div: string) {
+  addressFor(id: string) {
+    const div = diversifierIndex(id);
     return "utest1" + sha256Hex(`mock-escrow:${div}`).slice(0, 40) + sha256Hex(div).slice(0, 20);
   }
 }
@@ -110,7 +111,7 @@ export class Coordinator {
       goalZat: rec.goalZat.toString(),
       deadline: rec.deadline,
       creatorAddress: rec.creatorAddress,
-      escrowAddress: this.o.escrow.addressFor(diversifierIndex(id)),
+      escrowAddress: await this.o.escrow.addressFor(id),
       status: st.status,
       donationCount: st.donationCount,
       totalZat: reveal ? st.total.toString() : null,

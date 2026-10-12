@@ -8,7 +8,8 @@
   "scripts": {
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
-    "dev": "tsx src/dev.ts"
+    "dev": "tsx src/dev.ts",
+    "start": "tsx src/server.ts"
   },
   "dependencies": {
     "@noble/hashes": "^1.8.0"

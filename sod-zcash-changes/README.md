@@ -40,7 +40,7 @@ Zcash L1 has no smart contracts, so the rules live in a policy engine (`src/core
 
 ```bash
 npm install
-npm test            # 38 tests
+npm test            # 45 tests
 npm run typecheck
 npm run dev         # demo server on :8787: fake Zcash network, 3-of-5 mock signers
 ```
@@ -64,7 +64,22 @@ With the demo server the app shows Demo controls on each campaign so you can sta
 | `POST /api/campaigns/:id/refund` | `{secret, refundTo}` |
 | `POST /api/campaigns/:id/withdraw` | releases the payout |
 
-## Going live
+## Testnet (single-key mode)
+
+`npm run start` runs against real Zcash testnet: [Zebra](https://github.com/ZcashFoundation/zebra) for chain data and [Zallet](https://github.com/zcash/wallet) for the escrow wallet. Copy `.env.example` to `.env` and set the RPC URLs and credentials.
+
+1. Run Zebra on testnet with its RPC enabled, and let it sync.
+2. Run Zallet on testnet, create an account (`z_getnewaccount`), and note its number as `ESCROW_ACCOUNT`.
+3. Fund nothing: donors fund campaigns. Get testnet coins (TAZ) for the donor wallet from a faucet.
+4. `npm run start`, then point the frontend at it (`VITE_SOD_API` or the dev proxy).
+
+How it works: each campaign gets its own Orchard-only unified address from `z_getaddressforaccount`. Donations are read with `z_listreceivedbyaddress`. Refunds and payouts are sent with `z_sendmany` after the signer logic approves them.
+
+**This is custodial and testnet-only.** One wallet holds the key, so the operator can take the money, and there is no FROST. The server refuses to start on `mainnet`. The wallet chooses its own notes when it sends, so "which donation was paid" is tracked in `data/ledger.json`; notes at one campaign address are interchangeable, so funds still balance. A donation is marked paid before the send is queued, so a crash or retry can't pay it twice. If a send's outcome is unknown, the notes stay reserved and the server tells you to check the wallet.
+
+**Not verified against a live node.** The adapter follows the [zcashd RPC docs](https://zcash.github.io/rpc/) and is tested against a fake node that speaks those shapes. Zallet is still porting zcashd methods, so a method may be missing or differ; the error names the method. Likely first fixes: `getblockchaininfo` / `getblock` on your Zebra build (chain tip and block time), `z_listreceivedbyaddress` (memo and spent handling), and the `z_sendmany` privacy policy for your recipient type.
+
+## Going live (trustless)
 
 What is real and tested here: the rules, the commitment scheme, memo format, quorum logic, the coordinator and API, and the frontend. What is **not** here, because it needs a Zcash node and cannot be exercised in a sandbox:
 
@@ -80,12 +95,13 @@ Also before real money: an audit, signer operations (key custody, monitoring, ro
 ```
 sod-zcash/
 ├── src/core/        types, limits, crypto (commitment, ids), memo, policy (all the rules)
-├── src/chain/       MockChain (stand-in for a Zcash node)
+├── src/chain/       MockChain (fake network), zcashRpc.ts (Zebra + Zallet adapter)
 ├── src/signer/      SignerNode
 ├── src/threshold/   ThresholdSpender interface + MockThresholdSpender
 ├── src/coordinator/ Coordinator + HTTP server
-├── src/dev.ts       demo server
-├── test/            38 tests
+├── src/dev.ts       demo server (fake network)
+├── src/server.ts    testnet server (Zebra + Zallet, single-key)
+├── test/            45 tests
 └── frontend/        React + Tailwind
 ```
 
